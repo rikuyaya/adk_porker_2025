@@ -29,4 +29,6 @@ root_agent = Agent(
 - "all_in"の場合: あなたの残りチップ全額を指定してください
 
 初心者がわかるように専門用語には解説を加えてください""",
+    tools=[calc_gto],
+    sub_agents=[GTO_agent, exploit_agent, decision_agent],
 )
