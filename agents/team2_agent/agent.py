@@ -1,4 +1,4 @@
-from google.adk.agents import Agent
+from google.adk.agents import Agent, SequentialAgent
 
 # ツールは事前に定義されていると仮定します
 # from your_tools import EquityCalculator, PotOddsCalculator, GtoPreflopChartTool, SizingTool
@@ -18,7 +18,7 @@ victory_calculation_agent = Agent(
                 与えられた自分の手札と場のカードから、あなたのツールを使って最終的な勝率を計算してください。
                 他のことは一切考えず、計算結果の勝率（0.0から1.0の間の数値）のみを返してください。""",
     tools=[
-        EquityCalculator(),
+    #     EquityCalculator(),
     ],
 )
 
@@ -40,9 +40,9 @@ action_determination_agent = Agent(
                 例: "raise 500" または "call 200" または "fold"
                 """,
     tools=[
-        PotOddsCalculator(),
-        GtoPreflopChartTool(),
-        SizingTool(),
+        # PotOddsCalculator(),
+        # GtoPreflopChartTool(),
+        # SizingTool(),
     ],
 )
 
@@ -50,28 +50,9 @@ action_determination_agent = Agent(
 # -----------------------------------------------------------------------------
 # エージェント1: ルートエージェント (司令塔)
 # -----------------------------------------------------------------------------
-root_agent = Agent(
+root_agent = SequentialAgent(
     name=AGENT_NAME,
-    model="gemini-2.5-flash-lite",
     description="ポーカーAIの司令塔。各専門エージェントに指示を出し、最終的なアクションを決定・出力します。",
-    instruction="""あなたはテキサスホールデム・ポーカーAIの司令塔です。
-                以下の手順に従って、最終的な意思決定を行ってください。
-
-                1.  まず、`victory_calculation_agent`を呼び出し、現在の勝率を取得します。
-                2.  次に、`action_determination_agent`を呼び出し、ステップ1で得た勝率と現在のゲーム状況を伝えて、実行すべきアクションを決定させます。
-                3.  最後に、決定されたアクションに基づき、理由付け（Reasoning）を簡潔に記述し、指定されたJSON形式で最終的な回答を作成してください。
-                    - 理由付けでは、勝率やポットオッズなどの判断材料となった数値を具体的に含めてください。
-                    - 初心者がわかるように専門用語には解説を加えてください。
-
-                最終回答JSONフォーマット:
-                {
-                "action": "fold|check|call|raise|all_in",
-                "amount": <数値>,
-                "reasoning": "あなたの決定の理由を簡潔に説明"
-                }
-                """,
-    # ルートエージェント自身は計算ツールを持たず、サブエージェントに委任する
-    tools=[],
     # 思考と実行を委任するサブエージェントを定義
     sub_agents=[
         victory_calculation_agent,
