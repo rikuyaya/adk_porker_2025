@@ -5,8 +5,7 @@ from google.adk.agents import Agent,SequentialAgent
 from .game_state_parser_agent.tool import GameStateParser
 from .victory_calculation_agent.tool import EquityCalculator
 from .pot_odds_calculator_agent.tool import PotOddsCalculator
-from .gto_preflop_chart_agent.tool import GtoPreflopChartTool
-from .sizing_tool_agent.tool import SizingTool
+from .bet_sizing_tool_agent.tool import SizingTool
 
 
 # エージェントの名前定義
@@ -28,6 +27,11 @@ game_state_parser_agent = Agent(
     - ボードテクスチャ（dry/wet/coordinated）
     - 前のアクション履歴
     - スタック深度
+
+    【特に重要な抽出項目】
+    - position: ポジション（UTG, MP, CO, BTN, SB, BB）
+    - action_before: 前のアクション（none, raise, call, fold）
+    - stack_depth: スタック深度（BBの倍数）
 
     GameStateParserツールを使用して、ゲーム状態を構造化されたデータに変換してください。
     解析結果は次のエージェントが勝率計算に使用するため、正確性が重要です。
@@ -58,6 +62,18 @@ victory_calculation_agent = Agent(
     - hole_cards: プレイヤーのホールカード
     - community_cards: コミュニティカード（あれば）
     - num_opponents: 対戦相手数
+    - position: ポジション（UTG, MP, CO, BTN, SB, BB）
+    - action_before: 前のアクション（none, raise, call, fold）
+    - stack_depth: スタック深度（BBの倍数）
+
+    【重要な機能】
+    - プリフロップの場合：GTOチャートを使用した戦略的勝率計算
+    - プリフロップ以外：従来のハンド強度ベースの勝率計算
+
+    プリフロップ分析では以下を提供してください：
+    - GTO推奨アクションと頻度
+    - ハンド強度ティア（premium/strong/playable/speculative/weak）
+    - 戦略的理由と代替アクション
 
     結果は次のポットオッズ計算エージェントが使用するため、正確な勝率値を提供してください。
     プリフロップ、フロップ、ターン、リバーの各段階で適切な分析を行ってください。
@@ -93,48 +109,13 @@ pot_odds_calculator_agent = Agent(
     - expected_value: 期待値
     - confidence: 判定の信頼度
 
-    この情報は次のGTO戦略分析で使用されます。
+    この情報は次のベットサイズ計算で使用されます。
     """,
     tools=[PotOddsCalculator],
 )
 
-gto_preflop_chart_agent = Agent(
-    name="gto_preflop_chart_agent",
-    model="gemini-2.5-flash",
-    description="GTOプリフロップチャートエージェント",
-    instruction="""
-    あなたはGTO（Game Theory Optimal）プリフロップ戦略の専門エージェントです。
-
-    ゲーム状態がプリフロップの場合、以下の分析を行ってください：
-    - ハンドの標準記法への変換（例：AKs, AKo, AA等）
-    - ポジション別のGTO推奨アクション
-    - 前のアクションに対する最適な対応
-    - アクション頻度の分析
-    - 代替アクションの提案
-
-    GtoPreflopChartToolを使用して分析を行ってください。
-
-    分析時は以下の情報を活用してください：
-    - hole_cards: プレイヤーのホールカード
-    - position: ポジション（UTG, MP, CO, BTN, SB, BB）
-    - action_before: 前のアクション（none, raise, call, fold）
-    - stack_depth: スタック深度（BBの倍数）
-
-    プリフロップ以外のフェーズの場合は、「プリフロップではないため、GTOチャート分析をスキップします」と報告してください。
-
-    結果として以下を提供してください：
-    - recommended_action: 推奨アクション
-    - action_frequency: アクション頻度（%）
-    - reasoning: 戦略的理由
-    - hand_strength_tier: ハンド強度ティア
-
-    この情報は次のベットサイズ計算で使用されます。
-    """,
-    tools=[GtoPreflopChartTool],
-)
-
-sizing_tool_agent = Agent(
-    name="sizing_tool_agent",
+bet_sizing_tool_agent = Agent(
+    name="bet_sizing_tool_agent",
     model="gemini-2.5-flash",
     description="ベットサイズ計算エージェント",
     instruction="""
@@ -192,18 +173,14 @@ output_agent = Agent(
        - ハンドエクイティ
        - ハンド強度とカテゴリ
        - 改善可能性（アウツ）
+       - GTO分析結果（プリフロップの場合）
 
     3. ポットオッズ分析結果：
        - コールの利益性
        - 期待値
        - 推奨アクション（strong_call/call/fold等）
 
-    4. GTO戦略分析結果（プリフロップの場合）：
-       - GTO推奨アクション
-       - アクション頻度
-       - ハンド強度ティア
-
-    5. ベットサイズ計算結果（ベット/レイズの場合）：
+    4. ベットサイズ計算結果（ベット/レイズの場合）：
        - 推奨ベットサイズ
        - 戦略的目標
 
@@ -232,13 +209,11 @@ output_agent = Agent(
 
 root_agent = SequentialAgent(
     name=AGENT_NAME,
-    # description="SequentialAgentを使用した段階的ポーカー分析AI",
     sub_agents=[
         game_state_parser_agent,
         victory_calculation_agent,
         pot_odds_calculator_agent,
-        gto_preflop_chart_agent,
-        sizing_tool_agent,
+        bet_sizing_tool_agent,
         output_agent,
     ],
 )

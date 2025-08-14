@@ -1,8 +1,5 @@
 from google.adk.tools import FunctionTool, ToolContext
 from typing import Dict, Any, List, Optional
-import itertools
-import random
-
 
 def calculate_equity(
     hole_cards: List[str],
@@ -12,6 +9,7 @@ def calculate_equity(
 ) -> Dict[str, Any]:
     """
     ポーカーハンドの勝率（エクイティ）を計算します。
+    プリフロップの場合は、GTOチャートに基づいて勝率を計算します。
 
     Args:
         hole_cards: プレイヤーのホールカード（例: ["A♥", "K♠"]）
@@ -40,7 +38,11 @@ def calculate_equity(
             }
 
         # 詳細な勝率計算
-        equity_result = _calculate_detailed_equity(hole_cards, community_cards, num_opponents)
+        if len(community_cards) == 0:
+            # プリフロップの場合は、GTOチャートに基づいて勝率を計算
+            equity_result = _calculate_preflop_equity(hole_cards, num_opponents)
+        else:
+            equity_result = _calculate_detailed_equity(hole_cards, community_cards, num_opponents)
 
         # ツールコンテキストがある場合、状態を保存
         if tool_context:
@@ -69,6 +71,87 @@ def calculate_equity(
             "status": "error",
             "error_message": f"勝率計算エラー: {str(e)}"
         }
+
+
+def _calculate_preflop_equity(
+    hole_cards: List[str],
+    num_opponents: int,
+    position: str = "UTG",
+    stack_depth: int = 100,
+    action_before: str = "none"
+) -> Dict[str, Any]:
+    """
+    プリフロップのエクイティをGTOツールを使って計算します。
+    """
+    try:
+        # GTOプリフロップチャートツールを直接呼び出し
+        from ..gto_preflop_chart_agent.tool import get_gto_preflop_action
+        
+        gto_result = get_gto_preflop_action(
+            hole_cards=hole_cards,
+            position=position,
+            action_before=action_before,
+            stack_depth=stack_depth
+        )
+        
+        # GTO結果から勝率を推定
+        equity = _estimate_equity_from_gto(gto_result, num_opponents)
+        
+        return {
+            "equity": equity,
+            "hand_strength": _convert_tier_to_strength(gto_result["hand_strength_tier"]),
+            "hand_category": gto_result["hand_notation"],
+            "confidence": "中"  # GTOベースの計算は中程度の信頼度
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error_message": f"勝率計算エラー: {str(e)}"
+        }
+
+
+def _estimate_equity_from_gto(gto_result: Dict[str, Any], num_opponents: int) -> float:
+    """GTO結果から勝率を推定"""
+    # ハンド強度ティアに基づく基本勝率
+    tier_equity = {
+        "premium": 0.75,
+        "strong": 0.65,
+        "playable": 0.55,
+        "speculative": 0.45,
+        "weak": 0.35
+    }
+    
+    base_equity = tier_equity.get(gto_result["hand_strength_tier"], 0.5)
+    
+    # 推奨アクションによる調整
+    action = gto_result["recommended_action"]
+    action_frequency = gto_result["action_frequency"]
+    
+    if action == "raise" and action_frequency >= 80:
+        # 積極的なレイズは強いハンドを示唆
+        base_equity *= 1.1
+    elif action == "fold" and action_frequency >= 80:
+        # 積極的なフォールドは弱いハンドを示唆
+        base_equity *= 0.9
+    
+    # 対戦相手数による調整
+    opponent_adjustment = 1.0 / (1.0 + num_opponents * 0.25)
+    final_equity = base_equity * opponent_adjustment
+    
+    # 0.05から0.95の範囲に制限
+    return max(0.05, min(0.95, final_equity))
+
+
+def _convert_tier_to_strength(tier: str) -> float:
+    """GTOティアを数値強度に変換"""
+    tier_strength = {
+        "premium": 0.85,
+        "strong": 0.75,
+        "playable": 0.65,
+        "speculative": 0.55,
+        "weak": 0.45
+    }
+    return tier_strength.get(tier, 0.5)
 
 
 def _calculate_detailed_equity(hole_cards: List[str], community_cards: List[str], num_opponents: int) -> Dict[str, Any]:
