@@ -2,6 +2,9 @@ from google.adk.agents import Agent
 from google.adk.tools.agent_tool import AgentTool
 from google.adk.agents import SequentialAgent
 
+# SequentialAgentのモデル名を引数に入れていたのが原因だった
+
+
 GTO_agent = Agent(
     name="GTO_agent",
     model="gemini-2.5-flash-lite",
