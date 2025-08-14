@@ -57,24 +57,23 @@ def calculate_pot_odds(
         if is_profitable:
             if equity_margin >= 0.05:  # 5%以上のマージン
                 recommendation = "strong_call"
-                confidence = "high"
+                # confidence = "high"
             elif equity_margin >= 0.02:  # 2%以上のマージン
                 recommendation = "call"
-                confidence = "medium"
+                # confidence = "medium"
             else:  # わずかに利益的
                 recommendation = "marginal_call"
-                confidence = "low"
+                # confidence = "low"
         else:
             if equity_margin <= -0.05:  # 5%以上不利
                 recommendation = "strong_fold"
-                confidence = "high"
+                # confidence = "high"
             elif equity_margin <= -0.02:  # 2%以上不利
                 recommendation = "fold"
-                confidence = "medium"
+                # confidence = "medium"
             else:  # わずかに不利
                 recommendation = "marginal_fold"
-                confidence = "low"
-        
+                # confidence = "low"
         return {
             "status": "success",
             "pot_size": pot_size,
@@ -89,14 +88,14 @@ def calculate_pot_odds(
             "expected_value": expected_value,
             "equity_margin": equity_margin,
             "recommendation": recommendation,
-            "confidence": confidence,
+            # "confidence": confidence,
             # "implied_odds_factor": implied_odds_factor,
             "description": _generate_description(
                 pot_odds_percentage, 
                 equity * 100, 
                 recommendation, 
                 expected_value,
-                confidence
+                # confidence
             )
         }
     
@@ -112,7 +111,7 @@ def _generate_description(
     equity_percentage: float, 
     recommendation: str, 
     expected_value: float,
-    confidence: str
+    # confidence: str
 ) -> str:
     """結果の説明文を生成"""
     
@@ -131,7 +130,8 @@ def _generate_description(
     return (
         f"ポットオッズ: {pot_odds_percentage:.1f}%, "
         f"勝率: {equity_percentage:.1f}%, "
-        f"推奨: {action_desc} (信頼度: {confidence}), "
+        f"推奨: {action_desc}, "
+        # f"信頼度: {confidence} "
         f"期待値: {ev_desc}"
     )
 

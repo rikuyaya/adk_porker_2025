@@ -105,12 +105,12 @@ pot_odds_calculator_agent = Agent(
     - is_profitable: コールが利益的かどうか
     - recommendation: 推奨アクション（strong_call/call/marginal_call/marginal_fold/fold/strong_fold）
     - expected_value: 期待値
-    - confidence: 判定の信頼度
 
     この情報は次のベットサイズ計算で使用されます。
     """, 
     # インプライドオッズ係数は、相手の状況次第で変わるため処理が複雑。余裕があれば実装する。
     # - implied_odds_factor: 状況に応じたインプライドオッズ係数
+    # - confidence: 判定の信頼度
     
     tools=[PotOddsCalculator],
 )
