@@ -39,7 +39,7 @@ def estimate_hand_strength(
     if len(community_num) == 0:
         return _calculate_preflop_strength(hole_cards_num, hole_cards_suit, num_opponents, position)
     else:
-        return _calculate_postflop_strength(hole_cards_num, hole_cards_suit, community_num, community_suit, num_opponents, position)
+        return _calculate_postflop_strength(hole_cards_num, hole_cards_suit, community_num, community_suit, num_opponents)
     # else:
     #     # モンテカルロ法によるポストフロップ勝率計算を呼び出す
     #     return _monte_carlo_postflop_strength(
