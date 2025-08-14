@@ -14,6 +14,11 @@ def get_position_type(player_id: int, dealer_button: int, active_players: List[i
         str: 計算されたプレイヤーのポジションタイプ ("BTN", "SB", "BB", "UTG")
     """
     num_players = len(active_players)
+
+    if dealer_button not in active_players:
+        # エラーログを残したり、例外的な状況であることを示す値を返す
+        return "Error: Dealer not found in active players"
+    
     dealer_pos_index = active_players.index(dealer_button)
     player_pos_index = active_players.index(player_id)
     

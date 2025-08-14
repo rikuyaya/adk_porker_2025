@@ -7,13 +7,16 @@ from .pot_odds_calculator_agent.tool import PokerMetricsCalculator
 from .victory_calculation_agent.position_tool import PositionCalculator
 # from .bet_sizing_tool_agent.tool import SizingTool
 
+from google.adk.models.lite_llm import LiteLlm
 
 # エージェントの名前定義
 AGENT_NAME = "team2_agent"
+MODEL_GPT_4O = "openai/gpt-4o"
 
 victory_calculation_agent = Agent(
     name="victory_calculation_agent",
-    model="gemini-2.5-flash-lite",
+    # model="gemini-2.5-flash-lite",
+    model=LiteLlm(model=MODEL_GPT_4O),
     description="勝率計算エージェント",
     instruction="""
 
@@ -42,7 +45,8 @@ victory_calculation_agent = Agent(
 
 output_agent = Agent(
     name="output_agent",
-    model="gemini-2.5-flash-lite",
+    model=LiteLlm(model=MODEL_GPT_4O),
+    # model="gemini-2.5-flash-lite",
     description="最終的なアクション決定エージェント",
     instruction="""
     あなたは最終的なポーカーアクション決定の専門エージェントです。
