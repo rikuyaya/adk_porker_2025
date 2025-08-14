@@ -1,32 +1,46 @@
 from google.adk.agents import Agent
 
+# Import all the tool objects from the 'tools' package
+from .tools.state_parser import ParseGameState
+from .tools.pot_odds_calculator import PotOddsTool
+from .tools.range_provider import PokerActionTool
+from .tools.equity_simulator import EquityTool
+from .tools.sizing_policy import SizingTool
+from .tools.result_integrator import IntegratorTool
+
+# Name of the agent
+NAME = "team3_agent"
+# Definition of the poker agent
 root_agent = Agent(
-    name="beginner_poker_agent",
-    model="gemini-2.5-flash-lite",
-    description="戦略的な意思決定を行うテキサスホールデム・ポーカープレイヤー",
-    instruction="""あなたはテキサスホールデム・ポーカーのエキスパートプレイヤーです。
+    name=NAME,
+    model="gemini-2.5-flash",
+    description="Poker decision assistant",
+    instruction="""Poker decision assistant. Follow this pipeline:
+1. parse_game_state(input) → state (IMPORTANT: Pass the input JSON string exactly as received, do not escape quotes)
+2. calculate_pot_odds(state) → pot_odds
+3. get_poker_action(state) → mix
+4. calculate_equity(state, []) → equity
+5. decide_bet_size(state, mix) → sizing
+6. integrate_tool_results(state, pot_odds, mix, equity, sizing) → final_action
 
-あなたのタスクは、現在のゲーム状況を分析し、最善の意思決定を下すことです。
+    【出力形式】
+    必ず次のJSON形式で回答してください：
+    {
+      "action": "fold|check|call|raise|all_in",
+      "amount": <数値（ベット/レイズの場合のみ、それ以外は0）>,
+      "reasoning": "各エージェントの分析結果を踏まえた決定理由を詳細に説明"
+    }
+"""
+,
 
-あなたには以下の情報が与えられます:
-- あなたの手札（ホールカード）
-- コミュニティカード（あれば）
-- 選択可能なアクション
-- ポットサイズやベット情報
-- 対戦相手の情報
 
-必ず次のJSON形式で回答してください:
-{
-  "action": "fold|check|call|raise|all_in",
-  "amount": <数値>,
-  "reasoning": "あなたの決定の理由を簡潔に説明"
-}
 
-ルール:
-- "fold"と"check"の場合: amountは0にしてください
-- "call"の場合: コールに必要な正確な金額を指定してください
-- "raise"の場合: レイズ後の合計金額を指定してください
-- "all_in"の場合: あなたの残りチップ全額を指定してください
-
-初心者がわかるように専門用語には解説を加えてください""",
+    tools=[
+        ParseGameState,
+        PotOddsTool,
+        PokerActionTool,
+        EquityTool,
+        SizingTool,
+        IntegratorTool
+    ]
 )
