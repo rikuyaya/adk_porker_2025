@@ -28,7 +28,7 @@ AGENT_NAME = "team2_agent"
 #     - スタック深度
 
 #     【特に重要な抽出項目】
-#     - position: ポジション（UTG, MP, CO, BTN, SB, BB）
+#     - position: ポジション（UTG, MP, CO, BTN, SB）
 #     - action_before: 前のアクション（none, raise, call, fold）
 #     - stack_depth: スタック深度（BBの倍数）
 
@@ -61,7 +61,7 @@ victory_calculation_agent = Agent(
     - hole_cards: プレイヤーのホールカード
     - community_cards: コミュニティカード（あれば）
     - num_opponents: 対戦相手数
-    - position: ポジション（UTG, MP, CO, BTN, SB, BB）
+    - position: ポジション（UTG, MP, CO, BTN, SB）
     - action_before: 前のアクション（none, raise, call, fold）
     - stack_depth: スタック深度（BBの倍数）
 
@@ -105,12 +105,12 @@ pot_odds_calculator_agent = Agent(
     - is_profitable: コールが利益的かどうか
     - recommendation: 推奨アクション（strong_call/call/marginal_call/marginal_fold/fold/strong_fold）
     - expected_value: 期待値
-    - confidence: 判定の信頼度
 
     この情報は次のベットサイズ計算で使用されます。
     """, 
     # インプライドオッズ係数は、相手の状況次第で変わるため処理が複雑。余裕があれば実装する。
     # - implied_odds_factor: 状況に応じたインプライドオッズ係数
+    # - confidence: 判定の信頼度
     
     tools=[PotOddsCalculator],
 )
@@ -135,12 +135,12 @@ bet_sizing_tool_agent = Agent(
     - pot_size: 現在のポットサイズ
     - hand_strength: ハンド強度（0.0-1.0）
     - board_texture: ボードテクスチャ（dry/wet/coordinated）
-    - position: ポジション（IP/OOP）
+    - position: ポジション（UTG, MP, CO, BTN, SB）
     - action_type: アクションタイプ（bet/raise/3bet）
     - num_opponents: 対戦相手数
     - stack_depth: スタック深度
 
-    ベット/レイズアクションが推奨される場合のみ計算を実行してください。
+    ベットアクションが推奨される場合のみ計算を実行してください。
     フォールドやチェック/コールが推奨される場合は、「ベットアクションではないため、サイズ計算をスキップします」と報告してください。
 
     結果として以下を提供してください：
