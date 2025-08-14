@@ -7,7 +7,7 @@ def calculate_pot_odds(
     pot_size: float, 
     call_amount: float, 
     equity: float,
-    implied_odds_factor: float = 1.0
+    # implied_odds_factor: float = 1.0
 ) -> Dict[str, Any]:
     """
     ポットオッズを計算し、コールが利益的かどうかを判定します。
@@ -16,11 +16,11 @@ def calculate_pot_odds(
         pot_size: 現在のポットサイズ
         call_amount: コールに必要な金額
         equity: 勝率（0.0-1.0）
-        implied_odds_factor: インプライドオッズ係数（デフォルト: 1.0）
     
     Returns:
         Dict[str, Any]: ポットオッズ計算結果と推奨アクション
     """
+    # implied_odds_factor: インプライドオッズ係数（デフォルト: 1.0）
     try:
         if call_amount <= 0:
             return {
@@ -50,17 +50,19 @@ def calculate_pot_odds(
         required_equity_percentage = required_equity * 100
         
         # インプライドオッズを考慮した調整
-        adjusted_required_equity = required_equity / implied_odds_factor
-        adjusted_required_equity_percentage = adjusted_required_equity * 100
+        # adjusted_required_equity = required_equity / implied_odds_factor
+        # adjusted_required_equity_percentage = adjusted_required_equity * 100
         
         # 利益性の判定
-        is_profitable = equity >= adjusted_required_equity
+        is_profitable = equity >= required_equity
+        # is_profitable = equity >= adjusted_required_equity
         
         # 期待値計算
         expected_value = (equity * total_pot_after_call) - call_amount
         
         # マージン計算（どれだけ有利/不利か）
-        equity_margin = equity - adjusted_required_equity
+        equity_margin = equity - required_equity
+        # equity_margin = equity - adjusted_required_equity
         equity_margin_percentage = equity_margin * 100
         
         # 推奨アクション
@@ -96,15 +98,15 @@ def calculate_pot_odds(
             "pot_odds_percentage": pot_odds_percentage,
             "required_equity": required_equity,
             "required_equity_percentage": required_equity_percentage,
-            "adjusted_required_equity": adjusted_required_equity,
-            "adjusted_required_equity_percentage": adjusted_required_equity_percentage,
+            # "adjusted_required_equity": adjusted_required_equity,
+            # "adjusted_required_equity_percentage": adjusted_required_equity_percentage,
             "is_profitable": is_profitable,
             "expected_value": expected_value,
             "equity_margin": equity_margin,
             "equity_margin_percentage": equity_margin_percentage,
             "recommendation": recommendation,
             "confidence": confidence,
-            "implied_odds_factor": implied_odds_factor,
+            # "implied_odds_factor": implied_odds_factor,
             "description": _generate_description(
                 pot_odds_percentage, 
                 equity * 100, 
