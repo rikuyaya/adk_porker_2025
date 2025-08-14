@@ -8,8 +8,6 @@ from .victory_calculation_agent.position_tool import PositionCalculator
 # from .bet_sizing_tool_agent.tool import SizingTool
 
 
-
-
 # エージェントの名前定義
 AGENT_NAME = "team2_agent"
 
@@ -38,9 +36,8 @@ victory_calculation_agent = Agent(
     - pot_odds: ポットオッズ
     - pot_odds_reasoning: ポットオッズ計算の理由
     - action: 推奨アクション
-
     """,
-    tools=[EquityCalculator,PositionCalculator,PotOddsCalculator],
+    tools=[PositionCalculator,EquityCalculator,PotOddsCalculator],
 )
 
 output_agent = Agent(

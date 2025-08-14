@@ -1,15 +1,6 @@
 from typing import List
 from google.adk.tools import FunctionTool
 
-"""
-ポーカーゲームのポジション計算ユーティリティ
-
-ディーラーボタンの位置から、スモールブラインド（SB）とビッグブラインド（BB）の位置を計算し、
-各プレイヤーのポジション情報を提供します。
-positionは5人まで。
-"""
-
-
 def get_position_type(player_id: int, dealer_button: int, active_players: List[int]) -> str:
     """
     プレイヤーのポジションタイプを、現在のアクティブプレイヤー数に応じて計算します。
@@ -20,7 +11,7 @@ def get_position_type(player_id: int, dealer_button: int, active_players: List[i
         active_players: 現在有効なプレイヤーIDのリスト（席順）
     
     Returns:
-        str: 計算されたプレイヤーのポジションタイプ ("BTN", "SB", "BB", "CO", "UTG")
+        str: 計算されたプレイヤーのポジションタイプ ("BTN", "SB", "BB", "UTG")
     """
     num_players = len(active_players)
     dealer_pos_index = active_players.index(dealer_button)
@@ -35,7 +26,7 @@ def get_position_type(player_id: int, dealer_button: int, active_players: List[i
         return positions[relative_pos]
         
     elif num_players == 4:
-        positions = ["BTN", "SB", "BB", "CO"]
+        positions = ["BTN", "SB", "BB", "UTG"]
         return positions[relative_pos]
         
     elif num_players == 3:
@@ -47,7 +38,7 @@ def get_position_type(player_id: int, dealer_button: int, active_players: List[i
         return positions[relative_pos]
     
     # デフォルト（エラー時）
-    return "UTG"
+    return "Unknown"
 
 
 # ADK FunctionToolとして登録
