@@ -1,4 +1,7 @@
 from google.adk.agents import Agent
+from agents.team1_agent.agents.GTO_agent import GTO_agent
+from agents.team1_agent.agents.exploit_agent import exploit_agent
+from agents.team1_agent.agents.decision_agent import decision_agent
 
 root_agent = Agent(
     name="beginner_poker_agent",
