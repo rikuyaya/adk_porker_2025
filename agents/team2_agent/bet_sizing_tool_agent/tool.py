@@ -31,20 +31,20 @@ def calculate_bet_sizing(
         if pot_size <= 0:
             return {
                 "status": "error",
-                "error_message": "ポットサイズは0より大きい必要があります"
+                "error_message": "ポットサイズは0より大きい必要があります。値を確認して再実行してください。"
             }
         
         if not (0.0 <= hand_strength <= 1.0):
             return {
                 "status": "error",
-                "error_message": "ハンド強度は0.0から1.0の間である必要があります"
+                "error_message": "ハンド強度は0.0から1.0の間である必要があります。値を確認して再実行してください。"
             }
         
         valid_textures = ["dry", "wet", "coordinated"]
         if board_texture not in valid_textures:
             return {
                 "status": "error",
-                "error_message": f"ボードテクスチャは{valid_textures}のいずれかである必要があります"
+                "error_message": f"ボードテクスチャは{valid_textures}のいずれかである必要があります。値を確認して再実行してください。"
             }
         
         # ベットサイズ計算
@@ -172,17 +172,35 @@ def _get_base_sizing(hand_strength: float, board_texture: str, action_type: str)
 
 
 def _get_position_adjustment(position: str, board_texture: str) -> float:
-    """ポジション調整係数"""
-    if position == "IP":  # インポジション
-        if board_texture == "dry":
-            return 0.9  # やや小さめ
+    """
+    ポジションとボードテクスチャに応じてベットサイズを調整する係数を返します。
+    基本原則：OOPでは大きめ、IPでは小さめ。ウェットボードではその傾向を強める。
+    """
+    adjustment = 1.0  # 基本係数を1.0とする
+
+    # 1. ポジションのカテゴリで基本調整値を設定
+    if position in ["SB", "BB"]:  # Out of Position (OOP)
+        adjustment = 1.15  # 情報的に不利なため、基本サイズを15%増しにする
+    elif position in ["BTN", "CO"]:  # In Position (IP)
+        adjustment = 0.90  # 情報的に有利なため、基本サイズを10%減らす
+    # UTG, MPはミドルポジションとして基本係数1.0のまま
+
+    # 2. ボードテクスチャでさらに調整
+    if board_texture in ["wet", "coordinated"]:
+        # ウェットなボードでは、プロテクションのためサイズを上げる
+        if position in ["SB", "BB"]:
+            adjustment += 0.10  # OOPは特に大きくしてドローを牽制 (1.15 + 0.10 = 1.25)
         else:
-            return 1.0  # 標準
-    else:  # アウトオブポジション
-        if board_texture == "wet":
-            return 1.1  # やや大きめ
-        else:
-            return 1.0  # 標準
+            adjustment += 0.05  # IPでもドローからバリューを取るため少し上げる
+    
+    elif board_texture == "dry":
+        # ドライなボードでは、効率的なサイズを使い分ける
+        if position in ["BTN", "CO"]:
+            adjustment -= 0.05  # IPは薄いバリューを取るためさらに小さくできる (0.90 - 0.05 = 0.85)
+
+    # 極端な値にならないように、係数を0.8〜1.3の範囲に収める
+    return max(0.8, min(1.3, adjustment))
+
 
 
 def _get_opponent_adjustment(num_opponents: int) -> float:
@@ -195,7 +213,7 @@ def _get_opponent_adjustment(num_opponents: int) -> float:
         return 1.2  # 大きめ
 
 
-def _get_stack_adjustment(stack_depth: int, pot_size: float) -> float:
+def _get_stack_adjustment(stack_depth: int) -> float:
     """スタック深度調整係数"""
     if stack_depth < 30:  # ショートスタック
         return 0.8  # 小さめ
