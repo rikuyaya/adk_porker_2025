@@ -68,6 +68,9 @@ class PokerGame:
         # ゲーム統計
         self.game_stats = {"hands_played": 0, "players_eliminated": []}
 
+        # 最後に実行したショーダウン結果（観戦UI向けに公開するため）
+        self.last_showdown_results: Optional[Dict[str, Any]] = None
+
         game_logger.info(
             "PokerGame initialized with SB=%d, BB=%d, initial_chips=%d",
             small_blind,
@@ -195,7 +198,8 @@ class PokerGame:
         self.betting_round_complete = False
         self.last_raiser_index = None
         self.has_bet_or_raise_this_round = False
-        self.action_history = []
+        # 前ハンドのショーダウン表示内容をクリア
+        self.last_showdown_results = None
 
         # プレイヤーをリセット
         for player in self.players:
@@ -352,8 +356,8 @@ class PokerGame:
         # コールに必要な額
         to_call = max(0, self.current_bet - player.current_bet)
 
-        # 最近のアクション履歴（最新10件）
-        recent_history = self.action_history[-10:] if self.action_history else []
+        # 最近のアクション履歴（最新20件）
+        recent_history = self.action_history[-20:] if self.action_history else []
 
         return GameState(
             your_id=player_id,
@@ -910,7 +914,11 @@ class PokerGame:
 
         if len(remaining_players) == 0:
             game_logger.warning("Showdown called with no remaining players")
-            return {"winners": [], "results": []}
+            result: Dict[str, Any] = {"winners": [], "results": []}
+            self.last_showdown_results = result
+            # 履歴にショーダウン結果を追記
+            self.action_history.append("Showdown: no remaining players")
+            return result
 
         if len(remaining_players) == 1:
             # 1人だけ残った場合
@@ -925,7 +933,7 @@ class PokerGame:
                 game_logger.info("=== SHOWDOWN_RESULTS_RECORDED ===")
             except Exception as e:
                 game_logger.debug("Showdown logging (single winner) failed: %s", e)
-            return {
+            result = {
                 "winners": [winner.id],
                 "results": [
                     {
@@ -935,6 +943,10 @@ class PokerGame:
                     }
                 ],
             }
+            self.last_showdown_results = result
+            # 履歴にショーダウン結果を追記
+            self.action_history.append(f"Showdown: Player {winner.id} won {self.pot}")
+            return result
 
         # 複数プレイヤーでのショーダウン
         player_hands = []
@@ -943,6 +955,21 @@ class PokerGame:
                 player.hole_cards, self.community_cards
             )
             player_hands.append({"player": player, "hand": hand_result})
+
+        # 履歴: ショーダウン参加者のハンド情報を追記
+        for ph in player_hands:
+            try:
+                self.action_history.append(
+                    "Showdown: Player "
+                    + str(ph["player"].id)
+                    + " hand="
+                    + str(ph["hand"])
+                    + " cards="
+                    + ", ".join(str(card) for card in ph["player"].hole_cards)
+                )
+            except Exception:
+                # 履歴追記はゲーム進行を止めない
+                pass
 
         # 各プレイヤーの役をログ
         try:
@@ -979,6 +1006,12 @@ class PokerGame:
         remainder = self.pot % len(winners)
 
         results = []
+        # サマリを履歴に追記
+        self.action_history.append(
+            "Showdown winners: "
+            + ", ".join(str(w.id) for w in winners)
+            + f" best_hand={str(best_hand)} pot={self.pot} split={winnings_per_player} remainder={remainder}"
+        )
         for i, winner in enumerate(winners):
             winnings = winnings_per_player
             if i < remainder:  # 余りを最初の勝者から順に配布
@@ -992,6 +1025,7 @@ class PokerGame:
                     "winnings": winnings,
                 }
             )
+            # 各勝者の配当の詳細行は履歴に追記しない
 
         # 勝者と配当のログ
         try:
@@ -1014,7 +1048,7 @@ class PokerGame:
         except Exception as e:
             game_logger.debug("Showdown logging (results) failed: %s", e)
 
-        return {
+        result = {
             "winners": [w.id for w in winners],
             "results": results,
             "all_hands": [
@@ -1026,6 +1060,8 @@ class PokerGame:
                 for ph in player_hands
             ],
         }
+        self.last_showdown_results = result
+        return result
 
     def is_game_over(self) -> bool:
         """ゲーム終了条件をチェック"""
