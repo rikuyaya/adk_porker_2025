@@ -1,8 +1,8 @@
+# import pokerkit as pk
 from google.adk.agents import Agent,SequentialAgent
 
-
 # 各ツールのインポート
-from .game_state_parser_agent.tool import GameStateParser
+# from .game_state_parser_agent.tool import GameStateParser
 from .victory_calculation_agent.tool import EquityCalculator
 from .pot_odds_calculator_agent.tool import PotOddsCalculator
 from .bet_sizing_tool_agent.tool import SizingTool
@@ -11,35 +11,34 @@ from .bet_sizing_tool_agent.tool import SizingTool
 # エージェントの名前定義
 AGENT_NAME = "team2_agent"
 
+# game_state_parser_agent = Agent(
+#     name="game_state_parser_agent",
+#     model="gemini-2.5-flash-lite",
+#     description="ゲーム状態解析エージェント",
+#     instruction="""
+#     あなたはポーカーゲーム状態解析の専門エージェントです。
 
-game_state_parser_agent = Agent(
-    name="game_state_parser_agent",
-    model="gemini-2.5-flash-lite",
-    description="ゲーム状態解析エージェント",
-    instruction="""
-    あなたはポーカーゲーム状態解析の専門エージェントです。
+#     受信したゲーム状態JSONを詳細に解析し、以下の情報を抽出してください：
+#     - プレイヤーのホールカード
+#     - コミュニティカード
+#     - ポットサイズとコール金額
+#     - 対戦相手数とポジション
+#     - ボードテクスチャ（dry/wet/coordinated）
+#     - 前のアクション履歴
+#     - スタック深度
 
-    受信したゲーム状態JSONを詳細に解析し、以下の情報を抽出してください：
-    - プレイヤーのホールカード
-    - コミュニティカード
-    - ポットサイズとコール金額
-    - 対戦相手数とポジション
-    - ボードテクスチャ（dry/wet/coordinated）
-    - 前のアクション履歴
-    - スタック深度
+#     【特に重要な抽出項目】
+#     - position: ポジション（UTG, MP, CO, BTN, SB, BB）
+#     - action_before: 前のアクション（none, raise, call, fold）
+#     - stack_depth: スタック深度（BBの倍数）
 
-    【特に重要な抽出項目】
-    - position: ポジション（UTG, MP, CO, BTN, SB, BB）
-    - action_before: 前のアクション（none, raise, call, fold）
-    - stack_depth: スタック深度（BBの倍数）
+#     GameStateParserツールを使用して、ゲーム状態を構造化されたデータに変換してください。
+#     解析結果は次のエージェントが勝率計算に使用するため、正確性が重要です。
 
-    GameStateParserツールを使用して、ゲーム状態を構造化されたデータに変換してください。
-    解析結果は次のエージェントが勝率計算に使用するため、正確性が重要です。
-
-    エラーが発生した場合は、可能な限り部分的な情報でも抽出を試みてください。
-    """,
-    tools=[GameStateParser],
-)
+#     エラーが発生した場合は、可能な限り部分的な情報でも抽出を試みてください。
+#     """,
+#     tools=[GameStateParser],
+# )
 
 
 victory_calculation_agent = Agent(
@@ -210,7 +209,7 @@ output_agent = Agent(
 root_agent = SequentialAgent(
     name=AGENT_NAME,
     sub_agents=[
-        game_state_parser_agent,
+        # game_state_parser_agent,
         victory_calculation_agent,
         pot_odds_calculator_agent,
         bet_sizing_tool_agent,
