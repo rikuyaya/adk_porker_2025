@@ -3,19 +3,20 @@ from google.adk.agents import Agent,SequentialAgent
 # 各ツールのインポート
 # from .game_state_parser_agent.tool import GameStateParser
 from .victory_calculation_agent.tool import EquityCalculator
-from .pot_odds_calculator_agent.tool import PotOddsCalculator
+from .pot_odds_calculator_agent.tool import PokerMetricsCalculator
 from .victory_calculation_agent.position_tool import PositionCalculator
 # from .bet_sizing_tool_agent.tool import SizingTool
 
-
-
+from google.adk.models.lite_llm import LiteLlm
 
 # エージェントの名前定義
 AGENT_NAME = "team2_agent"
+MODEL_GPT_4O = "openai/gpt-4o"
 
 victory_calculation_agent = Agent(
     name="victory_calculation_agent",
-    model="gemini-2.5-flash",
+    # model="gemini-2.5-flash-lite",
+    model=LiteLlm(model=MODEL_GPT_4O),
     description="勝率計算エージェント",
     instruction="""
 
@@ -38,14 +39,14 @@ victory_calculation_agent = Agent(
     - pot_odds: ポットオッズ
     - pot_odds_reasoning: ポットオッズ計算の理由
     - action: 推奨アクション
-
     """,
-    tools=[EquityCalculator,PositionCalculator,PotOddsCalculator],
+    tools=[PositionCalculator,EquityCalculator,PokerMetricsCalculator],
 )
 
 output_agent = Agent(
     name="output_agent",
-    model="gemini-2.5-flash",
+    model=LiteLlm(model=MODEL_GPT_4O),
+    # model="gemini-2.5-flash-lite",
     description="最終的なアクション決定エージェント",
     instruction="""
     あなたは最終的なポーカーアクション決定の専門エージェントです。
@@ -99,7 +100,6 @@ output_agent = Agent(
 
 root_agent = SequentialAgent(
     name=AGENT_NAME,
-
     sub_agents=[
         victory_calculation_agent,
         output_agent,
