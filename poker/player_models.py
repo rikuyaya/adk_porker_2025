@@ -594,7 +594,6 @@ class LLMApiPlayer(Player):
             except requests.exceptions.RequestException as e:
                 logger.error(f"Session creation request error for {self.name}: {e}")
 
-
             # 実際の実行リクエストを別スレッドで発行し、20秒待機・10秒ごとにログ
             def run_request():
                 try:
