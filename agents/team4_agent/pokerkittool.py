@@ -120,12 +120,12 @@ def pokerkit_tool(
 
     for card in all_raw_cards:
         if not isinstance(card, str):
-             raise ValueError(f"カードの表記 '{card}' は不正です。文字列で指定してください。")
+             raise ValueError(f"カードの表記 '{card}' は不正です。文字列で指定してください。カードの表記を確認して再度実行してください。")
 
         card = "".join(card.split())
 
         if len(card) < 2:
-            raise ValueError(f"カードの表記 '{card}' は不正です。2文字以上の文字列で指定してください。")
+            raise ValueError(f"カードの表記 '{card}' は不正です。2文字以上の文字列で指定してください。カードの枚数を確認して再度実行してください。")
 
         # 最後の一文字をスート、それより前をランクとして分離
         rank_symbol = card[:-1].upper()
