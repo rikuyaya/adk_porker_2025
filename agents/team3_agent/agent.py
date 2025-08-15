@@ -55,7 +55,7 @@ psychological_analysis_agent = Agent(
 
 aggressive_strategy_agent = Agent(
     name="aggressive_strategy_agent",
-    model=LiteLlm(model=GPT_4O),
+    model=LiteLlm(model=MODEL_GPT_4O),
     description="アグレッシブ戦略エージェント - 積極的プレイと心理戦重視",
     instruction="""
     あなたはアグレッシブなポーカー戦略の専門家です。積極的なプレイと心理戦を重視してください。
