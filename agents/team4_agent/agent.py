@@ -1,8 +1,12 @@
 from google.adk.agents import Agent
+from google.adk.models.lite_llm import LiteLlm
+from .pokerkittool import PokerKitTool
+
+MODEL_GPT_4O = "openai/gpt-4o"
 
 root_agent = Agent(
-    name="beginner_poker_agent",
-    model="gemini-2.5-flash-lite",
+    name="team4_agent",
+    model=LiteLlm(model=MODEL_GPT_4O),
     description="戦略的な意思決定を行うテキサスホールデム・ポーカープレイヤー",
     instruction="""あなたはテキサスホールデム・ポーカーのエキスパートプレイヤーです。
 
@@ -14,6 +18,10 @@ root_agent = Agent(
 - 選択可能なアクション
 - ポットサイズやベット情報
 - 対戦相手の情報
+
+ツールには、勝率とポットオッズを計算する機能が用意されています。まずはここで使ってみましょう。
+
+人数における相対的な強さを理解し、合理的な判断を下してください。また少しだけアグレッシブに行動しながら、損失を控え、利益を追求してください。
 
 必ず次のJSON形式で回答してください:
 {
@@ -27,6 +35,6 @@ root_agent = Agent(
 - "call"の場合: コールに必要な正確な金額を指定してください
 - "raise"の場合: レイズ後の合計金額を指定してください
 - "all_in"の場合: あなたの残りチップ全額を指定してください
-
-初心者がわかるように専門用語には解説を加えてください""",
+""",
+tools=[PokerKitTool]
 )
