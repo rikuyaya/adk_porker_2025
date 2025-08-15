@@ -2,7 +2,7 @@ from typing import List, Optional, Tuple
 from google.adk.tools import FunctionTool
 from pokerkit import Deck, Card, StandardHighHand
 import random
-
+import re
 
 
 def pokerkit_tool(
@@ -54,30 +54,100 @@ def pokerkit_tool(
             例: 2.0 = 2:1のオッズ（33%の勝率が必要）
             計算式: pot_before / to_call
 
-    使用例:
-        # プリフロップ、ヘッズアップ
-        equity, req, ratio = pokerkit_tool(
-            hole_cards=["As", "Kd"],
-            community_cards=[],
-            num_opponents=1,
-            pot_before=100,
-            to_call=50,
-            simulations=1000
-        )
+        ## ツール使用時のルール
 
-        # フロップ、3人戦
-        equity, req, ratio = pokerkit_tool(
-            hole_cards=["Tc", "Th"],
-            community_cards=["Js", "9h", "2d"],
-            num_opponents=2,
-            pot_before=300,
-            to_call=100,
-            simulations=1000
-        )
+        pokerkit_tool を使用して勝率を計算する際は、以下のカード表記ルールを**厳密に**守ってください。
 
+        ### カード表記のルール
+        - **形式**: 全てのカードは**ランク**と**スート**を組み合わせた**2文字**の文字列で表現します。
+        - **ランク**:
+        - `2` から `9` はそのまま数字を使用します。
+        - `10` は必ず大文字の **`T`** を使用します。
+        - `Jack` は **`J`**, `Queen` は **`Q`**, `King` は **`K`**, `Ace` は **`A`** を使用します。
+        - **スート**:
+        - スペード(Spades)は小文字の **`s`** を使用します。
+        - ハート(Hearts)は小文字の **`h`** を使用します。
+        - ダイヤ(Diamonds)は小文字の **`d`** を使用します。
+        - クラブ(Clubs)は小文字の **`c`** を使用します。
+
+        ### 具体例
+        - **良い例 (Correct Examples):**
+        - `hole_cards=["As", "Kd"]`
+        - `hole_cards=["Tc", "Th"]`
+        - `community_cards=["Js", "Qh", "9d"]`
+
+        - **悪い例 (Incorrect Examples):**
+        - `["A♠", "K♦"]` (理由: スートに記号 `♠`, `♦` を使っている)
+        - `["10c", "9h"]` (理由: ランク `10` が `T` ではない)
+        - `["king of spades", "ace of hearts"]` (理由: 文字列形式が違う)
+
+        ツールの正しい呼び出し方の例：
+        pokerkit_tool(hole_cards=["As", "Kd"], community_cards=["Ts", "9h", "2c"], ...)
+
+        ツールの間違った呼び出し方の例：
+        - pokerkit_tool(hole_cards=["A spade", "K diamond"], ...)  // 間違い: 文字列表記
+        - pokerkit_tool(hole_cards=["10s", "9h"], ...)            // 間違い: 10はTで表記
+        - pokerkit_tool(hole_cards=["Asp", "Kh"], ...)             // 間違い: 'p'は不正なスート
+
+        このルールに従って、正確な引数を生成してください。
     """
+    
+    # community_cardsがNoneの場合に空リストを代入
+    community_cards_list = community_cards or []
+    
+    # ランクとスートの変換マップ
+    rank_map = {
+        '10': 'T', 'T': 'T', 't': 'T',
+        'J': 'J', 'j': 'J',
+        'Q': 'Q', 'q': 'Q',
+        'K': 'K', 'k': 'K',
+        'A': 'A', 'a': 'A',
+        **{str(i): str(i) for i in range(2, 10)}
+    }
+    suit_map = {
+        's': 's', '♠': 's', '♤': 's',
+        'h': 'h', '♥': 'h', '♡': 'h',
+        'd': 'd', '♦': 'd', '♢': 'd',
+        'c': 'c', '♣': 'c', '♧': 'c',
+    }
+    
+    # 入力された全てのカードを一時的なリストにまとめる
+    raw_hole_cards_len = len(hole_cards)
+    all_raw_cards = hole_cards + community_cards_list
 
-    community_cards = community_cards or []
+    normalized_cards = []
+    card_pattern = re.compile(r'^[2-9TJQKA][shdc]$')
+
+    for card in all_raw_cards:
+        if not isinstance(card, str):
+             raise ValueError(f"カードの表記 '{card}' は不正です。文字列で指定してください。")
+
+        card = "".join(card.split())
+
+        if len(card) < 2:
+            raise ValueError(f"カードの表記 '{card}' は不正です。2文字以上の文字列で指定してください。")
+
+        # 最後の一文字をスート、それより前をランクとして分離
+        rank_symbol = card[:-1].upper()
+        suit_symbol = card[-1].lower()
+        
+        # マップを使ってランクとスートを変換
+        normalized_rank = rank_map.get(rank_symbol, rank_symbol)
+        normalized_suit = suit_map.get(suit_symbol, suit_symbol)
+        
+        normalized_card = normalized_rank + normalized_suit
+        
+        # バリデーション
+        if not card_pattern.match(normalized_card):
+            raise ValueError(
+                f"カードの表記 '{card}' (処理後: '{normalized_card}') は不正です。" # エラーメッセージを詳細化
+                "ランク(2-9,T,J,Q,K,A)とスート(s,h,d,c)で指定してください。カードを確認して再度実行してください。"
+            )
+        normalized_cards.append(normalized_card)
+
+    # これ以降の処理は全て正規化されたカードリストで行われる
+    hole_cards = normalized_cards[:raw_hole_cards_len]
+    community_cards = normalized_cards[raw_hole_cards_len:]
 
     # --- validation ---
     if len(hole_cards) != 2:
