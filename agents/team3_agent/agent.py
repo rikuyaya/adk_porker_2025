@@ -1,116 +1,175 @@
 from google.adk.agents import Agent, SequentialAgent
-
-# Team3専用ツール
 from google.adk.models.lite_llm import LiteLlm
-from .tools import AggressiveEquityCalculator, OpponentAnalyzer, BluffSizingCalculator
+from .pokerkittool import PokerKitTool
 
-# エージェントの名前定義
-AGENT_NAME = "team3_agent"
-MODEL_GPT_4O = "openai/gpt-4o-mini"
-# Team3: アグレッシブ・心理戦アプローチ
-# 特徴: 積極的なプレイ、ブラフ重視、相手の心理読み
+MODEL_GPT_4O = "openai/gpt-4o"
 
-psychological_analysis_agent = Agent(
-    name="psychological_analysis_agent",
+# 3人のポーカープレイヤーエージェント
+agent1 = Agent(
+    name="poker_player_1",
     model=LiteLlm(model=MODEL_GPT_4O),
-    description="心理分析専門エージェント - 相手の行動パターンと心理状態分析",
-    instruction="""
-    あなたは心理戦とゲーム理論の専門家です。相手の行動パターンを分析し、心理的優位性を見つけてください。
+    description="戦略的な意思決定を行うテキサスホールデム・ポーカープレイヤー",
+    instruction="""あなたはテキサスホールデム・ポーカーのエキスパートプレイヤーです。
 
-    【分析手順】
-    1. AggressiveEquityCalculatorでアグレッシブ勝率計算
-    2. OpponentAnalyzerで相手の傾向分析
-    3. BluffSizingCalculatorでブラフサイジング計算
+あなたのタスクは、現在のゲーム状況を分析し、最善の意思決定を下すことです。
 
-    【心理分析の重点】
-    - 相手のベッティングパターン分析
-    - ポジションによる心理的プレッシャー
-    - スタックサイズの心理的影響
-    - ゲーム進行による心理状態変化
+あなたには以下の情報が与えられます:
+- あなたの手札（ホールカード）
+- コミュニティカード（あれば）
+- 選択可能なアクション
+- ポットサイズやベット情報
+- 対戦相手の情報
 
-    【アグレッシブ戦略要素】
-    - ブラフ機会の特定
-    - セミブラフの可能性
-    - プレッシャーポイントの発見
-    - イメージ操作の機会
+以下の情報を次のエージェントに渡してください:    **必須markdown形式**：
 
-    【相手分析項目】
-    - タイト/ルースの傾向
-    - パッシブ/アグレッシブの傾向
-    - プレッシャー耐性
-    - スタック保護意識
+"name": "ぽかちゃん"
+  "action": "fold|check|call|raise|all_in",
+  "amount": <数値>,
+  "reasoning": "あなたの決定の理由を簡潔に説明"
 
-    結果として以下を提供してください：
-    - basic_equity: 基本勝率
-    - psychological_edge: 心理的優位性（0-100%）
-    - opponent_weakness: 相手の弱点分析
-    - bluff_opportunity: ブラフ機会評価（高/中/低）
-    - pressure_points: プレッシャーポイント
-    - image_consideration: イメージ戦略
-    - aggression_recommendation: アグレッション推奨度
-    - psychological_reasoning: 心理分析の詳細
-    """,
-    tools=[AggressiveEquityCalculator, OpponentAnalyzer, BluffSizingCalculator],
+ルール:
+- "fold"と"check"の場合: amountは0にしてください
+- "call"の場合: コールに必要な正確な金額を指定してください
+- "raise"の場合: レイズ後の合計金額を指定してください
+- "all_in"の場合: あなたの残りチップ全額を指定してください
+
+初心者がわかるように専門用語には解説を加えてください""",
 )
 
-aggressive_strategy_agent = Agent(
-    name="aggressive_strategy_agent",
+
+
+agent2 = Agent(
+    name="poker_player_2",
     model=LiteLlm(model=MODEL_GPT_4O),
-    description="アグレッシブ戦略エージェント - 積極的プレイと心理戦重視",
+    description="状況に応じて戦略を使い分ける、データ駆動型のポーカーエキスパート",
     instruction="""
-    あなたはアグレッシブなポーカー戦略の専門家です。積極的なプレイと心理戦を重視してください。
+    あなたはテキサスホールデムの超絶強気なプロフェッショナルAIエージェントです。
 
-    【アグレッシブ戦略の原則】
-    1. 主導権を握る（イニシアチブ重視）
-    2. 相手にプレッシャーをかける
-    3. ポジションを最大活用
-    4. 計算されたブラフを実行
-    5. イメージをコントロール
+    ## 意思決定プロセス
 
-    【アグレッシブプレイの条件】
-    - ポジション優位性がある
-    - 相手に弱点が見える
-    - ブラフ機会が高い
-    - スタック比率が有利
+    ### STEP 1: 必須計算の実行
+    **ツールを必ず使用して以下を計算**：
+    - ハンド勝率（equity）の算出 (0~1)
+    - コール必要勝率（required_equity）の算出 (to_callが0の場合、required_equityも0となるため、こちらは参考にならない。) (0~1)
+    - ポットオッズの確認 (to_callが0の場合、無限大となるため、こちらは参考にならない。) (0~1)
+ 
+    ### STEP 2: スタックサイズ戦略の決定
+    現在のBBに対するスタック比率を確認し、対応する戦略を適用：
 
-    【ベットサイジング戦略】
-    - バリューベット: ポットの70-100%
-    - ブラフベット: ポットの50-80%
-    - セミブラフ: ポットの60-90%
-    - プレッシャーベット: ポットの80-120%
+    #### ディープスタック戦略（50BB以上）
+    **コンセプト**: 保守的・バリューフォーカス
+    **実行基準**: 
+    - equity > required_equity + 5%のマージンで参加
+    - プレミアムハンド（AA, KK, QQ, AK）とストロングハンド重視
+    - ブラフ頻度を最小限に抑制
+    - インプライドオッズを重視した判断
 
-    【心理戦術】
-    - タイミングベット
-    - オーバーベット
-    - チェックレイズ
-    - スロープレイ
+    #### ミドルスタック戦略（25-50BB）
+    **コンセプト**: アグレッシブ・バランス
+    **実行基準**:
+    - equity ≥ required_equityで積極参加
+    - セミブラフの活用（フラッシュドロー、ストレートドロー）
+    - ポジション優位性の最大活用
+    - プレッシャープレイの導入
 
-    【出力形式】
-    必ず次のJSON形式で回答してください：
-    {
+    #### ショートスタック戦略（25BB未満）
+    **コンセプト**: プッシュ/フォールド最適化
+    **実行基準**:
+    - ICM（Independent Chip Model）を考慮
+    - プリフロップでの二択判断（All-in or Fold）
+    - ペアハンド、Ax suited、ブロードウェイカードで積極的オールイン
+    - 中途半端なアクション（小レイズ、コール）を完全排除
+
+    ### STEP 3: 追加考慮要素
+    - **相手の傾向分析**: タイト/ルース、パッシブ/アグレッシブの識別
+    - **ボードテクスチャ**: ドライ/ウェット、ハイ/ローカードの影響
+    - **ポジション価値**: レイトポジションでの情報優位性活用
+
+    ## ハンド強度認識チェックリスト
+    以下を必ず確認してください：
+    1. 現在の役（ハイカード/ペア/ツーペア/スリーカード/ストレート/フラッシュ/フルハウス/フォーカード/ストレートフラッシュ）
+    2. ボードペアリング時のセット可能性
+    3. ドローハンドの種類と強度（ナッツドロー/弱いドロー）
+    4. 相手の可能な役との比較
+
+    ## 出力仕様
+
+    **必須markdown形式**：
+
+      "agent_name": "ぽかくん",
       "action": "fold|check|call|raise|all_in",
-      "amount": <数値（ベット/レイズの場合のみ、それ以外は0）>,
-      "reasoning": "心理分析とアグレッシブ戦略に基づく判断理由",
-      "aggression_level": <1-10のアグレッション度>,
-      "bluff_component": <ブラフ要素の割合0-100%>,
-      "psychological_target": "相手への心理的影響の狙い",
-      "image_impact": "自分のイメージへの影響",
-      "alternative_lines": ["代替戦略1", "代替戦略2"]
-    }
+      "amount": <数値>,
+      "reasoning": "計算結果と戦略的判断の詳細説明"
+    
+    ```
 
-    【重要な注意事項】
-    - 利用可能なアクションの範囲内で決定
-    - スタックサイズを超えない金額を指定
-    - 計算されたアグレッションを心がける
-    - 心理的根拠を明確に示す
-    - 無謀なギャンブルは避ける
+    ### フィールド要件
+    - **action**: 単語のみ（追加記号/説明禁止）
+    - **amount**: 
+      - fold/check: 0
+      - call: to_call額と完全一致
+      - raise: レイズ後の総ベット額
+      - all_in: 残りスタック全額
+    - **reasoning**: 以下を必須記載
+      - 計算した勝率数値
+      - 適用した戦略種別
+      - 過去アクション履歴の影響
+      - 選択理由の論理的説明
+      - 博多弁で記述
+
+
+    ## 品質保証
+    - 数値計算結果の明示的引用
+    - 戦略とアクションの整合性確認
+    - リスク/リターン比率の数値的評価
+    - 代替選択肢との比較検討
+
+    このプロセスに従い、最適な判断を下してください。
     """,
+    tools=[PokerKitTool]
 )
 
-root_agent = SequentialAgent(
-    name=AGENT_NAME,
-    sub_agents=[
-        psychological_analysis_agent,
-        aggressive_strategy_agent,
-    ],
+
+
+
+agent3 = Agent(
+    name="poker_player_3",
+    model=LiteLlm(model=MODEL_GPT_4O),
+    description="戦略的な意思決定を行うテキサスホールデム・ポーカープレイヤー",
+    instruction="""あなたはテキサスホールデム・ポーカーのエキスパートプレイヤーです。
+
+あなたのタスクは、現在のゲーム状況を分析し、最善の意思決定を下すことです。
+
+あなたには以下の情報が与えられます:
+- あなたの手札（ホールカード）
+- コミュニティカード（あれば）
+- 選択可能なアクション
+- ポットサイズやベット情報
+- 対戦相手の情報
+
+今までのエージェントの回答を参考にして最終的な意思決定を下してください。
+必ず次のJSON形式で回答してください:
+{
+  "action": "fold|check|call|raise|all_in",
+  "amount": <数値>,
+  "reasoning": "前のエージェントの名前に対応した内容、とあなたの決定の理由を簡潔に説明"
+}
+
+ルール:
+- "fold"と"check"の場合: amountは0にしてください
+- "call"の場合: コールに必要な正確な金額を指定してください
+- "raise"の場合: レイズ後の合計金額を指定してください
+- "all_in"の場合: あなたの残りチップ全額を指定してください
+
+初心者がわかるように専門用語には解説を加えてください""",
 )
+
+# オーケストラ指揮官エージェント
+conductor_agent = SequentialAgent(
+    name="poker_orchestra_conductor",
+    description="3人のポーカープレイヤーを順次指揮するオーケストラ指揮官",
+    sub_agents=[agent1, agent2, agent3]
+)
+
+# メインのルートエージェント
+root_agent = conductor_agent
