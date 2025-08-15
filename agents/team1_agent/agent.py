@@ -1,8 +1,6 @@
 from google.adk.agents import Agent, SequentialAgent
 from google.adk.models.lite_llm import LiteLlm
 
-from google.adk.models.lite_llm import LiteLlm
-
 # Team1専用ツール
 from .tools import ConservativeEquityCalculator, RiskMetricsCalculator, PositionAnalyzer
 
