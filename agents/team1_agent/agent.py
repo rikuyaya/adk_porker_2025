@@ -6,7 +6,7 @@ from .tools import ConservativeEquityCalculator, RiskMetricsCalculator, Position
 
 # エージェントの名前定義
 AGENT_NAME = "team1_agent"
-MODEL_GPT_4O = "openai/gpt-4o"
+MODEL_GPT_4O = "openai/gpt-4o-mini"
 # Team1: 保守的・数学的アプローチ
 # 特徴: 厳密な数学計算、リスク回避、保守的な戦略
 

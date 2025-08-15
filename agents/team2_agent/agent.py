@@ -11,7 +11,7 @@ from google.adk.models.lite_llm import LiteLlm
 
 # エージェントの名前定義
 AGENT_NAME = "team2_agent"
-MODEL_GPT_4O = "openai/gpt-4o"
+MODEL_GPT_4O = "openai/gpt-4o-mini"
 
 victory_calculation_agent = Agent(
     name="victory_calculation_agent",

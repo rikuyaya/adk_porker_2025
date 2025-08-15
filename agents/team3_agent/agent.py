@@ -6,13 +6,13 @@ from .tools import AggressiveEquityCalculator, OpponentAnalyzer, BluffSizingCalc
 
 # エージェントの名前定義
 AGENT_NAME = "team3_agent"
-GPT_4O = "openai/gpt-4o"
+MODEL_GPT_4O = "openai/gpt-4o-mini"
 # Team3: アグレッシブ・心理戦アプローチ
 # 特徴: 積極的なプレイ、ブラフ重視、相手の心理読み
 
 psychological_analysis_agent = Agent(
     name="psychological_analysis_agent",
-    model=LiteLlm(model=GPT_4O),
+    model=LiteLlm(model=MODEL_GPT_4O),
     description="心理分析専門エージェント - 相手の行動パターンと心理状態分析",
     instruction="""
     あなたは心理戦とゲーム理論の専門家です。相手の行動パターンを分析し、心理的優位性を見つけてください。

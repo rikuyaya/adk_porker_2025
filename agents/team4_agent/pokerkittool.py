@@ -1,9 +1,7 @@
-from math import inf
 from typing import List, Optional, Tuple
 from google.adk.tools import FunctionTool
-from pokerkit import Deck, Card, StandardHighHand, parse_range, calculate_equities
+from pokerkit import Deck, Card, StandardHighHand
 import random
-import re
 
 
 
@@ -13,7 +11,7 @@ def pokerkit_tool(
     num_opponents: int = 1,
     pot_before: int = 0,
     to_call: int = 0,
-    simulations: int = 100
+    simulations: int = 1000
 ) -> Tuple[float, float, float]:
     """
     pokerkitを使用してポーカーハンドのエクイティとポットオッズを計算します。
@@ -31,7 +29,7 @@ def pokerkit_tool(
                 ["Js", "Qh", "9d", "2c", "Ah"] (リバー)
 
         num_opponents: 対戦相手数（1以上）
-            例: 1 (ヘッズアップ), 2 (3人), 8 (9人)
+            例: 1 (ヘッズアップ), 2 (3人), 3 (4人)
 
         pot_before: コール前のポット総額（相手のベットも含む）
             例: 100, 1500, 0 (チェック可能な場合)
@@ -39,8 +37,8 @@ def pokerkit_tool(
         to_call: コールに必要な額
             例: 50, 200, 0 (チェック可能な場合)
 
-        simulations: モンテカルロシミュレーション回数（デフォルト100）
-            例: 100 (高速), 1000 (標準), 10000 (高精度)
+        simulations: モンテカルロシミュレーション回数（デフォルト1000）
+            例: 1000 (標準), 10000 (高精度)
 
     Returns:
         tuple[float, float, float]: (equity, required_equity, pot_odds_ratio)
@@ -83,16 +81,16 @@ def pokerkit_tool(
 
     # --- validation ---
     if len(hole_cards) != 2:
-        raise ValueError("hole_cards は2枚で指定してください。")
+        raise ValueError("hole_cards は2枚で指定してください。カードの枚数を確認して、再度実行してください。")
     if len(community_cards) not in (0, 3, 4, 5):
-        raise ValueError("community_cards の枚数は 0 / 3 / 4 / 5 のいずれかにしてください。")
+        raise ValueError("community_cards の枚数は 0 / 3 / 4 / 5 のいずれかにしてください。カードの枚数を確認して、再度実行してください。")
     if num_opponents < 1:
-        raise ValueError("num_opponents は1以上にしてください。")
+        raise ValueError("num_opponents は1以上にしてください。対戦相手の数を確認して、再度実行してください。")
 
     # 重複チェック
     all_cards = hole_cards + community_cards
     if len(set(all_cards)) != len(all_cards):
-        raise ValueError("重複しているカードがあります。")
+        raise ValueError("重複しているカードがあります。カードの枚数を確認して、再度実行してください。")
 
     # カード表記をそのまま使用（pokerkitの標準形式を想定）
     hole_str  = "".join(hole_cards)
