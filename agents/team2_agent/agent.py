@@ -2,7 +2,7 @@ from google.adk.agents import Agent, SequentialAgent
 from google.adk.models.lite_llm import LiteLlm
 from .pokerkittool import PokerKitTool
 
-MODEL_GPT_4O = "openai/gpt-4o"
+MODEL_GPT_4O = "openai/gpt-4o-mini"
 
 # 3人のポーカープレイヤーエージェント
 
@@ -81,7 +81,7 @@ agent2 = Agent(
       - なぜそのアクションが有効かの論理的説明
       - **博多弁で記述**
     """,
-    tools=[PokerKitTool]
+    tools=[PokerKitTool],
 )
 
 agent3 = Agent(
@@ -118,7 +118,7 @@ agent3 = Agent(
 conductor_agent = SequentialAgent(
     name="team2_agent",
     description="3人のポーカープレイヤーを順次指揮するオーケストラ指揮官",
-    sub_agents=[agent1, agent2, agent3]
+    sub_agents=[agent1, agent2, agent3],
 )
 
 # メインのルートエージェント
@@ -156,7 +156,6 @@ root_agent = conductor_agent
 # )
 
 
-
 # agent2 = Agent(
 #     name="poker_player_2",
 #     model=LiteLlm(model=MODEL_GPT_4O),
@@ -174,13 +173,13 @@ root_agent = conductor_agent
 #     -【重要】ツールの勝率計算は、あくまで相手がランダムな手札を持っている場合の参考値です。
 #       フロップ以降は、ボードの状況（テクスチャ）と相手のアクション履歴を最優先し、相手のハンドレンジ（持っている可能性のある手札の範囲）を絞り込んだ上で、その勝率が本当に信頼できるかを見極めてください。
 #       特に危険なボードでは、計算上の勝率が高くても慎重に判断してください。
- 
+
 #     ### STEP 2: スタックサイズ戦略の決定
 #     現在のBBに対するスタック比率を確認し、対応する戦略を適用：
 
 #     #### ディープスタック戦略（50BB以上）
 #     **コンセプト**: 保守的・バリューフォーカス
-#     **実行基準**: 
+#     **実行基準**:
 #     - equity > required_equity + 5%のマージンで参加
 #     - ただし、ボードにストレートやフラッシュの可能性が高い場合や、相手から強いアクションがあった場合は、より慎重な判断（チェックやフォールド）も考慮すること。
 #     - プレミアムハンド（AA, KK, QQ, AK）とストロングハンド重視
@@ -223,12 +222,12 @@ root_agent = conductor_agent
 #       "action": "fold|check|call|raise|all_in",
 #       "amount": <数値>,
 #       "reasoning": "計算結果と戦略的判断の詳細説明"
-    
+
 #     ```
 
 #     ### フィールド要件
 #     - **action**: 単語のみ（追加記号/説明禁止）
-#     - **amount**: 
+#     - **amount**:
 #       - fold/check: 0
 #       - call: to_call額と完全一致
 #       - raise: レイズ後の総ベット額
