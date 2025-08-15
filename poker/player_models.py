@@ -594,20 +594,85 @@ class LLMApiPlayer(Player):
             except requests.exceptions.RequestException as e:
                 logger.error(f"Session creation request error for {self.name}: {e}")
 
-            # メッセージの送信
-            response = requests.post(
-                f"{self.url}/run",
-                json={
-                    "app_name": self.app_name,
-                    "user_id": self.user_id,
-                    "session_id": session_id,
-                    "new_message": {
-                        "role": "user",
-                        "parts": [{"text": input_json}],
-                    },
-                },
-                headers={"Content-Type": "application/json"},
-            )
+
+            # 実際の実行リクエストを別スレッドで発行し、20秒待機・10秒ごとにログ
+            def run_request():
+                try:
+                    return requests.post(
+                        f"{self.url}/run",
+                        json={
+                            "app_name": self.app_name,
+                            "user_id": self.user_id,
+                            "session_id": session_id,
+                            "new_message": {
+                                "role": "user",
+                                "parts": [{"text": input_json}],
+                            },
+                        },
+                        headers={"Content-Type": "application/json"},
+                        timeout=44,  # スレッド側は44秒でタイムアウト
+                    )
+                except Exception as e:
+                    return e
+
+            start = time.time()
+            logged_10 = False
+            logged_20 = False
+            logged_30 = False
+            with cf.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(run_request)
+                response = None
+                while True:
+                    elapsed = time.time() - start
+                    # 10秒ごとのログ出力
+                    if not logged_10 and elapsed >= 10:
+                        logger.info(
+                            f"Waiting for LLM API response for {self.name}... 10 seconds elapsed"
+                        )
+                        logged_10 = True
+                    if not logged_20 and elapsed >= 20:
+                        logger.info(
+                            f"Waiting for LLM API response for {self.name}... 20 seconds elapsed"
+                        )
+                        logged_20 = True
+                    if not logged_30 and elapsed >= 30:
+                        logger.info(
+                            f"Waiting for LLM API response for {self.name}... 30 seconds elapsed"
+                        )
+                        logged_30 = True
+                    try:
+                        # 短い待機でポーリング
+                        response = future.result(timeout=0.2)
+                        break
+                    except cf.TimeoutError:
+                        pass
+                    if elapsed >= 40:
+                        logger.warning(
+                            f"LLM API response timeout for {self.name} after 40 seconds - folding"
+                        )
+                        if hasattr(self, "last_decision_reasoning"):
+                            self.last_decision_reasoning = (
+                                "40秒経過しても応答がないため、フォールドします"
+                            )
+                        return {
+                            "action": "fold",
+                            "amount": 0,
+                            "reasoning": "40秒経過しても応答がないため、フォールドします",
+                        }
+
+            # スレッド結果の処理
+            if isinstance(response, Exception):
+                logger.error(f"LLM decision error for {self.name}: {response}")
+                random_player = RandomPlayer(self.id, self.name, self.chips)
+                return random_player.make_decision(game_state)
+
+            if response is None:
+                logger.error(f"Empty response received for {self.name}")
+                return {
+                    "action": "fold",
+                    "amount": 0,
+                    "reasoning": "20秒経過しても応答がないため、フォールドします",
+                }
 
             if response.status_code != 200:
                 logger.error(
@@ -623,7 +688,11 @@ class LLMApiPlayer(Player):
                     }, indent=2)}"
                     )
                 # 失敗時はフォールドで安全に進行
-                return {"action": "fold", "amount": 0}
+                return {
+                    "action": "fold",
+                    "amount": 0,
+                    "reasoning": "20秒経過しても応答がないため、フォールドします",
+                }
 
             # 正常応答
             try:
